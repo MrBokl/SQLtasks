@@ -1,0 +1,72 @@
+Есть таблица анализов Analysis:
+
+an_id — ID анализа;
+an_name — название анализа;
+an_cost — себестоимость анализа;
+an_price — розничная цена анализа;
+an_group — группа анализов.
+Есть таблица групп анализов Groups:
+
+gr_id — ID группы;
+gr_name — название группы;
+gr_temp — температурный режим хранения.
+Есть таблица заказов Orders:
+
+ord_id — ID заказа;
+ord_datetime — дата и время заказа;
+ord_an — ID анализа.
+Далее мы будем работать с этими таблицами.
+
+Задача №1: вывести название и цену для всех анализов, которые продавались 5 февраля 2020 и всю следующую неделю.
+
+SELECT A.an_name, A.an_price
+FROM Analysis A
+INNER JOIN Orders O ON A.an_id = O.ord_an
+WHERE O.ord_datetime >= '2020-02-05' AND O.ord_datetime <= '2020-02-12'
+
+Задача №2:Нарастающим итогом рассчитать, как увеличивалось количество проданных тестов каждый месяц каждого года с разбивкой по группе.
+
+WITH MonthSales AS (
+    SELECT
+        DATE_TRUNC('month', O.ord_datetime) AS month_year,
+        EXTRACT(YEAR FROM O.ord_datetime) AS year,
+        A.an_group,
+        COUNT(*) AS monthly_test_sales
+    FROM Orders O
+    INNER JOIN Analysis A ON O.ord_an = A.an_id
+    GROUP BY month_year, year, A.an_group
+    ORDER BY year, month_year, A.an_group
+)
+SELECT
+    month_year,
+    year,
+    an_group,
+    SUM(monthly_test_sales) OVER (PARTITION BY an_group, year ORDER BY month_year) AS cumulative_sales
+FROM MonthSales
+ORDER BY year, month_year, an_group;
+
+
+Задача №3: Рассмотрим таблицу балансов клиентов:
+
+ClientBalance(client_id, client_name, client_balance_date, client_balance_value)
+
+client_id — идентификатор клиента;
+client_name — ФИО клиента;
+client_balance_date — дата баланса клиента;
+client_balance_value — значение баланса клиента.
+
+В данной таблице в какой-то момент времени появились полные дубли. Предложите способ для избавления от них без создания новой таблицы.
+
+WITH Duplicates AS (
+    SELECT
+        client_id,
+        client_name,
+        client_balance_date,
+        client_balance_value,
+        ROW_NUMBER() OVER (PARTITION BY client_id, client_balance_date ORDER BY client_balance_date) AS row_num
+    FROM
+        ClientBalance
+)
+DELETE FROM Duplicates WHERE row_num > 1;
+
+
