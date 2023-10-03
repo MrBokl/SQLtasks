@@ -1,0 +1,37 @@
+1. Розрахуйте частку користувачів, які здійснили останній логін понад 2 тижні тому.
+
+SELECT  COUNT(*) AS UsersCount
+FROM task2
+WHERE LastLog_days_ago > 14
+
+
+2.Яка середня кількість сесій у користувачів, які з'явилися на сервісі понад рік тому?
+SELECT AVG(Sessions) AS AvgSessions
+FROM task2
+WHERE LifeTime > 365
+
+3.Розрахуйте кількість та частку користувачів залежно від їх статі та віку. Також візуалізуйте результат у діаграмі та 2.5. 
+Які значення віку користувачів, на вашу думку, є аномальними? Запропонуйте правило вибору таких користувачів.
+
+SELECT Sex, 
+       Age AS Age_Group,
+       COUNT(*) AS User_Count
+FROM task2
+WHERE Sex IS NOT NULL
+GROUP BY Sex, Age
+ORDER BY Sex, Age
+
+
+4.Необхідно підготувати дані щодо RFM аналізу щодо доходів від користувача та його терміну життя на сервісі. 
+Сформуйте SQL запит та візуалізуйте результат проведеного аналізу
+
+SELECT u.id AS user_id,
+    EXTRACT(DAY FROM AGE('2020-04-20'::DATE, MAX(p.payment_time))) AS recency,
+    COUNT(DISTINCT p.pay_count) AS frequency,
+    SUM(p.amount) AS monetary
+FROM users u
+LEFT JOIN payments p ON u.id = p.user_id
+WHERE p.payment_time >= '2020-04-01' AND p.payment_time <= '2020-04-19'
+GROUP BY u.id
+
+
